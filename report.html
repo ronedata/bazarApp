@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Monthly & Item-wise Report — NewBazar</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- আপনার কাস্টম স্টাইল (select + spinner) থাকলে -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+  <h1 class="mb-4">Monthly & Item-wise Report</h1>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <label for="repMonth" class="form-label">Month</label>
+          <input type="month" id="repMonth" class="form-control" />
+        </div>
+
+        <div class="col-12 col-md-5">
+          <label for="repItem" class="form-label">Item</label>
+          <div class="select-wrap loading w-100">
+            <select id="repItem" class="form-select select" disabled>
+              <option value="" selected>Loading...</option>
+            </select>
+            <div class="select-spinner" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-3 d-flex align-items-end">
+          <button class="btn btn-success w-100" id="btnLoad">Load</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h2 class="h5 mb-3">Summary</h2>
+      <div id="summaryText" class="text-muted">Select month & item to view report.</div>
+      <ul id="perItemList" class="mt-2 mb-0"></ul>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th style="width:120px">Date</th>
+              <th>Item</th>
+              <th style="width:120px" class="text-end">Price</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody id="repBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="report.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
