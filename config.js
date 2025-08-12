@@ -1,2 +1,2 @@
 // Set your Apps Script Web App URL after deployment
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyHaFCybIebI8ZFj0RNbQre2r7V0Mma0H3MeNgAnuWFjpn2L6b0HmYc7Hx8r1bAwrQvpA/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxqQrMTR_zrs3Ma7HkGzTcio4a2fpz_hDbAt1QOK3Fo0ORspCwcorammwBiVP96rS5Ing/exec';

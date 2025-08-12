@@ -5,50 +5,92 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NewBazar — Summary</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
   <style>
-    /* Mobile friendly spacing */
     @media (max-width:576px){
       h1{font-size:22px;margin-bottom:12px}
       .quick-links .btn{width:100%}
+      .kpi-row{max-width:100%}
     }
+    .rule{height:2px;border:0;border-top:2px solid #bcbcbc;max-width:680px;margin:12px auto;}
+    .kpi-row{max-width:420px;margin:6px auto 0}
+    .kpi .name{min-width:110px;display:inline-block}
+    .muted{color:#6c757d}
   </style>
 </head>
 <body class="bg-light">
 
 <div class="container py-3">
-  <h1 class="mb-3">NewBazar</h1>
+  <h1 class="mb-3 text-center">NewBazar</h1>
 
   <!-- Quick links -->
   <div class="card shadow-sm mb-3">
     <div class="card-body">
       <div class="row g-2 quick-links">
-        <div class="col-12 col-md-4">
-          <a href="hisab.html" class="btn btn-success btn-lg w-100">Hisab Add</a>
-        </div>
-        <div class="col-12 col-md-4">
-          <a href="Item.html" class="btn btn-primary btn-lg w-100">Item Add</a>
-        </div>
-        <div class="col-12 col-md-4">
-          <a href="report.html" class="btn btn-dark btn-lg w-100">Report</a>
-        </div>
+        <div class="col-12 col-md-4"><a href="hisab.html" class="btn btn-success btn-lg w-100">Hisab Add</a></div>
+        <div class="col-12 col-md-4"><a href="Item.html"  class="btn btn-primary btn-lg w-100">Item Add</a></div>
+        <div class="col-12 col-md-4"><a href="report.html" class="btn btn-dark btn-lg w-100">Report</a></div>
       </div>
     </div>
   </div>
 
-	<!-- Summary (current month) -->
-	<div class="card shadow-sm">
-	  <div class="card-body text-center">
-		<h2 id="monthTitle" class="h5 mb-1">Loading...</h2>
-		<p id="totalLine" class="fw-bold mb-1 text-primary"></p>
-		<p id="prevLine" class="text-muted mb-3" style="display:none"></p>
+  <!-- Summary -->
+  <div class="card shadow-sm">
+    <div class="card-body text-center">
 
-		<ul id="summaryList" class="list-group list-group-flush"></ul>
+      <!-- CURRENT MONTH -->
+      <h2 id="monthTitle" class="h5 mb-1">Loading...</h2>
+      <p id="totalLine" class="mb-2">
+        <span class="text-success fw-semibold">Grand</span>
+        <span class="muted">Total:</span>
+        <span class="fw-bold text-primary">Loading...</span>
+      </p>
 
-		<div id="emptyMsg" class="text-muted mt-3" style="display:none">No data found for this month.</div>
-		<div id="errorMsg" class="text-danger mt-3" style="display:none">Failed to load summary.</div>
-	  </div>
-	</div>
+      <div class="kpi-row text-start">
+        <div class="kpi d-flex justify-content-between">
+          <span class="name">বাসা ভাড়া</span><span id="rentValue">--</span>
+        </div>
+        <div class="kpi d-flex justify-content-between">
+          <span class="name">বিদ্যুৎ বিল</span><span id="electricValue">--</span>
+        </div>
+        <div class="kpi d-flex justify-content-between">
+          <span class="name">Wifi</span><span id="wifiValue">--</span>
+        </div>
+      </div>
+
+      <p class="mt-2 mb-2 muted" id="grandFormulaCur"></p>
+
+      <hr class="rule">
+
+      <!-- PREVIOUS MONTH (header size same as current) -->
+      <h2 id="prevTitle" class="h5 mb-1">Loading...</h2>
+      <p id="prevTotalLine" class="mb-2">
+        <span class="text-success fw-semibold">Grand</span>
+        <span class="muted">Total:</span>
+        <span class="fw-bold text-primary">Loading...</span>
+      </p>
+
+      <div class="kpi-row text-start">
+        <div class="kpi d-flex justify-content-between">
+          <span class="name">বাসা ভাড়া</span><span id="prevRent">--</span>
+        </div>
+        <div class="kpi d-flex justify-content-between">
+          <span class="name">বিদ্যুৎ বিল</span><span id="prevElectric">--</span>
+        </div>
+        <div class="kpi d-flex justify-content-between">
+          <span class="name">Wifi</span><span id="prevWifi">--</span>
+        </div>
+      </div>
+
+      <p class="mt-2 mb-3 muted" id="grandFormulaPrev"></p>
+
+      <button class="btn btn-success btn-sm" id="btnDetails">Details Load</button>
+
+      <ul id="summaryList" class="list-group list-group-flush mt-3"></ul>
+
+      <div id="emptyMsg" class="text-muted mt-3" style="display:none">No data found for this month.</div>
+      <div id="errorMsg" class="text-danger mt-3" style="display:none">Failed to load summary.</div>
+    </div>
+  </div>
 </div>
 
 <script src="config.js"></script>

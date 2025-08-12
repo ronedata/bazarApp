@@ -119,6 +119,54 @@ function doGet(e){
       });
     }
 
+    if (action === 'reportyear') {
+      // year=YYYY, optional item
+      const yearStr = (params.year || '').toString().trim();
+      const filterItem = (params.item || '').toString().trim();
+      const year = parseInt(yearStr, 10);
+      if (!year || yearStr.length !== 4) return err('year (YYYY) required');
+
+      const sh = getSheet(SHEET_HISAB);
+      const n = Math.max(sh.getLastRow()-1, 0);
+      const rows = n ? sh.getRange(2,1,n,4).getValues() : [];
+
+      // যদি আপনার প্রোজেক্টে parseToDate / toYM / toYMD না থাকে, আগের মেসেজ থেকে ঐ ৩টা helper কপি করুন।
+      const filtered = rows.map(r=>{
+          const dt = parseToDate(r[0]); // Date or null
+          return {
+            date: dt,
+            item: (r[1] || '').toString(),
+            price: Number(r[2]) || 0,
+            description: r[3],
+            _y: dt ? dt.getFullYear() : 0,
+            _m: dt ? (dt.getMonth()+1) : 0
+          };
+        })
+        .filter(x => x._y === year && (!filterItem || x.item.trim() === filterItem));
+
+      const total = filtered.reduce((s,x)=> s + (x.price||0), 0);
+
+      // perItem (বার্ষিক)
+      const perItem = {};
+      filtered.forEach(x => { perItem[x.item] = (perItem[x.item] || 0) + (x.price||0); });
+
+      // perMonth totals (01..12)
+      const perMonth = {};
+      for (let m=1; m<=12; m++) perMonth[String(m).padStart(2,'0')] = 0;
+      filtered.forEach(x=>{
+        const key = String(x._m).padStart(2,'0');
+        perMonth[key] += (x.price||0);
+      });
+
+      return ok({
+        rows: filtered.map(x => ({ date: x.date ? toYMD(x.date) : '', item: x.item, price: x.price, description: x.description })),
+        total,
+        perItem,
+        perMonth,
+        year
+      });
+    }
+
     return err('Unknown action');
   }catch(ex){
     console.log('Catch ex:', ex, 'Local params:', JSON.stringify(e));
