@@ -1,11 +1,12 @@
-// Helpers
+// ===================== Helpers (unchanged API behavior) =====================
 async function apiGet(params){
   const url = WEB_APP_URL + '?' + new URLSearchParams(params).toString();
   const r = await fetch(url, { method: 'GET' });
   return r.json();
 }
+
 async function apiPost(payload){
-  // form-urlencoded => preflight এড়ায়
+  // form-urlencoded => preflight এড়ায় (আপনার আগের ইমপ্লিমেন্টেশন 그대로)
   const r = await fetch(WEB_APP_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
@@ -13,11 +14,56 @@ async function apiPost(payload){
   });
   return r.json();
 }
-const $ = (id)=>document.getElementById(id);
-const showLoader = (on)=>{ $('appLoader').hidden = !on; };
-const msg = (t)=>{ $('msg').textContent = t || ''; };
 
-// Dropdown fill from Items sheet
+const $ = (id)=>document.getElementById(id);
+
+const showLoader = (on)=>{ $('appLoader').hidden = !on; };
+
+function setAlert(type, text){
+  // type: 'success' | 'danger' | 'warning' | 'info' | 'secondary'
+  $('msg').innerHTML = text
+    ? `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+         ${text}
+         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+       </div>`
+    : '';
+}
+
+// ===================== UI State helpers =====================
+function setFormDisabled(disabled){
+  const form = $('hisabForm');
+  const controls = form.querySelectorAll('input, select, textarea, button');
+  controls.forEach(el => {
+    // msg area's close button/others বাইরে—form এর ভিতরেরগুলোকেই টার্গেট
+    if (el.id !== 'msg') el.disabled = disabled;
+  });
+  form.setAttribute('aria-busy', disabled ? 'true' : 'false');
+
+  // Submit button spinner toggle
+  const sp = $('btnSpinner');
+  if (sp) sp.classList.toggle('d-none', !disabled);
+}
+
+function clearForm(){
+  const today = new Date().toISOString().slice(0,10);
+  $('date').value = today;
+  $('item').value = '';
+  $('price').value = '';
+  $('desc').value = '';
+  // Bootstrap validation reset
+  $('hisabForm').classList.remove('was-validated');
+}
+
+function formatDateMDY(dateStr){
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  const m = d.getMonth() + 1; // 1-12
+  const day = d.getDate();
+  const y = d.getFullYear();
+  return `${m}/${day}/${y}`;
+}
+
+// ===================== Data load (items) =====================
 async function loadItems(){
   const wrap = document.querySelector('.select-wrap');
   const sel = $('item');
@@ -45,6 +91,7 @@ async function loadItems(){
     }
   }catch(ex){
     sel.innerHTML = '<option value="">Failed to load items</option>';
+    setAlert('danger', 'Items লোড করতে সমস্যা হয়েছে। নেটওয়ার্ক বা API চেক করুন।');
   }finally{
     // লোডিং শেষ
     wrap.classList.remove('loading');
@@ -52,66 +99,68 @@ async function loadItems(){
   }
 }
 
-function clearForm(){
-  const today = new Date().toISOString().slice(0,10);
-  $('date').value = today;
-  $('item').value = '';
-  $('price').value = '';
-  $('desc').value = '';
-  msg('Cleared');
-}
-
-function formatDateMDY(dateStr){
-  const d = new Date(dateStr);
-  if (isNaN(d)) return '';
-  const m = d.getMonth() + 1; // 1-12
-  const day = d.getDate();
-  const y = d.getFullYear();
-  return `${m}/${day}/${y}`;
-}
-
+// ===================== Save =====================
 async function saveHisab(){
+  const form = $('hisabForm');
+
+  // Bootstrap validation
+  if (!form.checkValidity()){
+    form.classList.add('was-validated');
+    setAlert('danger', 'প্রয়োজনীয় ফিল্ডগুলো পূরণ করুন।');
+    return;
+  }
+
   const dateRaw = $('date').value;
   const item = $('item').value;
   const price = $('price').value;
   const description = $('desc').value.trim();
 
-  if(!dateRaw || !item || !price){
-    msg('Date, Item, Price required');
-    return;
-  }
-
-  // তারিখ ফরম্যাট করুন -> MM/DD/YYYY
+  // তারিখ ফরম্যাট -> MM/DD/YYYY (আগের লজিক বজায়)
   const date = formatDateMDY(dateRaw);
   if(!date){
-    msg('Invalid date');
+    form.classList.add('was-validated');
+    setAlert('danger', 'ভ্যালিড তারিখ দিন।');
     return;
   }
 
-  msg('Saving...');
+  // সাবমিট ক্লিকের পর: সব ফিল্ড + সাবমিট বাটন ডিজেবল
+  setFormDisabled(true);
+  setAlert('info', 'Saving...');
+
   try{
     const res = await apiPost({ action:'addhisab', date, item, price, description });
-    if(res.ok){      
+    if(res.ok){
       clearForm();
-	  msg('Hisab saved ✔');
+      setAlert('success', 'Hisab saved ✔');
     }else{
-      msg('Failed: ' + (res.error || 'Unknown error'));
+      setAlert('danger', 'Failed: ' + (res.error || 'Unknown error'));
     }
   }catch(ex){
-    msg('Network error: ' + ex.message);
+    setAlert('danger', 'Network error: ' + ex.message);
+  }finally{
+    // সেভ শেষ: সবকিছু রি-এনেবল
+    setFormDisabled(false);
   }
 }
 
-// Initialize
+// ===================== Init =====================
 window.addEventListener('DOMContentLoaded', async ()=>{
   // আজকের তারিখ ডিফল্ট
   $('date').value = new Date().toISOString().slice(0,10);
 
-  // বোতাম ইভেন্ট
-  $('btnSubmit').addEventListener('click', saveHisab);
-  $('btnClear').addEventListener('click', clearForm);
+  // ফর্ম সাবমিট হ্যান্ডলার
+  $('hisabForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    await saveHisab();
+  });
 
-  // ফुल-পেজ লডিং দেখাও যতক্ষণ না dropdown রেডি
+  // ক্লিয়ার বাটন
+  $('btnClear').addEventListener('click', ()=>{
+    clearForm();
+    setAlert('secondary', 'Cleared');
+  });
+
+  // প্রাথমিক ড্রপডাউন লোড হওয়া পর্যন্ত ফুল-পেজ লোডার
   showLoader(true);
   await loadItems();
   showLoader(false);
