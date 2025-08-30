@@ -1,4 +1,4 @@
-// ===== Existing API helpers (kept intact) =====
+// ===== Existing API helpers (unchanged) =====
 async function apiGet(params){
   const url = WEB_APP_URL + '?' + new URLSearchParams(params).toString();
   const r = await fetch(url, {method:'GET'});
@@ -8,16 +8,16 @@ async function apiPost(payload){
   const r = await fetch(WEB_APP_URL, {
     method:'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-    body: new URLSearchParams(payload) // action=additem&item=Rice
+    body: new URLSearchParams(payload)
   });
   return r.json();
 }
 
-// ===== Existing shortcuts (kept) =====
+// ===== Shortcuts (unchanged) =====
 const $ = (id)=>document.getElementById(id);
 const msg = (t)=>{$('msg').textContent = t;};
 
-// ===== NEW: UI helpers for state/validation/alerts =====
+// ===== Alerts/validation helpers (unchanged) =====
 function setSavingState(isSaving){
   const submitBtn = $('btnSubmit');
   const input = $('newItem');
@@ -28,17 +28,12 @@ function setSavingState(isSaving){
     if(spinner) spinner.classList.toggle('d-none', !isSaving);
     if(text) text.textContent = isSaving ? 'Saving…' : 'Submit';
   }
-  if(input){
-    input.disabled = isSaving;
-  }
+  if(input){ input.disabled = isSaving; }
 }
 function showAlert(el, show){
   if(!el) return;
   el.classList.toggle('d-none', !show);
-  if(show){
-    // auto-hide for a nicer UX
-    setTimeout(()=> el.classList.add('d-none'), 2500);
-  }
+  if(show){ setTimeout(()=> el.classList.add('d-none'), 2500); }
 }
 function validateForm(){
   const form = $('itemForm');
@@ -50,24 +45,42 @@ function validateForm(){
   return true;
 }
 
-// ===== Existing renderList with small improvements =====
+// ===== Current Items: beautiful render =====
 function renderList(items){
   const ul = $('itemList');
   const loading = $('listLoading');
   const empty = $('listEmpty');
   if(!ul) return;
 
-  // hide loader
   if(loading) loading.classList.add('d-none');
-
   ul.innerHTML = '';
+
   if(Array.isArray(items) && items.length){
     items.forEach(x=>{
       const li = document.createElement('li');
-      li.className = 'py-2 border-bottom';
-      li.textContent = x;
+      // নতুন স্টাইল: ছোট কার্ডের মতো
+      li.className = 'item-row';
+
+      // নাম
+      const name = document.createElement('div');
+      name.className = 'item-name';
+      name.textContent = x;
+
+      // actions (ডান পাশে)
+      const actions = document.createElement('div');
+      actions.className = 'item-actions';
+
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-sm btn-danger btn-delete';
+      btn.innerHTML = '<i class="bi bi-trash me-1" aria-hidden="true"></i>Delete';
+      btn.setAttribute('data-item', x);
+
+      actions.appendChild(btn);
+      li.appendChild(name);
+      li.appendChild(actions);
       ul.appendChild(li);
     });
+
     ul.classList.remove('d-none');
     empty && empty.classList.add('d-none');
   }else{
@@ -75,24 +88,17 @@ function renderList(items){
     empty && empty.classList.remove('d-none');
   }
 
-  // ensure card visible once we attempted to load
   const card = $('listCard');
   if(card) card.hidden = false;
 }
 
-// ===== Existing addItem with required behaviors added =====
+// ===== addItem (unchanged logic) =====
 async function addItem(){
-  // Bootstrap validation
   if(!validateForm()) return;
 
   const item = $('newItem').value.trim();
-  if(!item){ 
-    // keep original message behavior too
-    msg('Item name required'); 
-    return; 
-  }
+  if(!item){ msg('Item name required'); return; }
 
-  // UX messaging
   msg('Saving…');
   showAlert($('alertError'), false);
   showAlert($('alertSuccess'), false);
@@ -101,29 +107,58 @@ async function addItem(){
     setSavingState(true);
     const res = await apiPost({action:'additem', item});
     if(res.ok){
-      $('newItem').value = '';
-      // reset validation state
-      const form = $('itemForm');
-      if(form) form.classList.remove('was-validated');
-
-      msg('Item added ✔');
-      showAlert($('alertSuccess'), true);
-
-      // refresh list (shows loader first)
+      $('newItem').value='';
+      const form = $('itemForm'); if(form) form.classList.remove('was-validated');
+      msg('Item added ✔'); showAlert($('alertSuccess'), true);
       await refreshList();
     }else{
-      msg('Failed: ' + (res.error||'Unknown error'));
-      showAlert($('alertError'), true);
+      msg('Failed: ' + (res.error||'Unknown error')); showAlert($('alertError'), true);
     }
   }catch(ex){
-    msg('Network error: ' + ex.message);
-    showAlert($('alertError'), true);
+    msg('Network error: ' + ex.message); showAlert($('alertError'), true);
+  }finally{ setSavingState(false); }
+}
+
+// ===== Delete flow with Bootstrap modal (unchanged) =====
+let __pendingDeleteItem = null;
+let __confirmModal = null;
+
+function openDeleteConfirm(item){
+  __pendingDeleteItem = item;
+  const nameSpan = $('confirmItemName');
+  if(nameSpan){ nameSpan.textContent = `"${item}"`; }
+  if(__confirmModal){ __confirmModal.show(); }
+}
+
+async function deleteItem(item){
+  if(!item) return;
+  openDeleteConfirm(item);
+}
+
+async function performDelete(){
+  const item = __pendingDeleteItem;
+  if(!item) return;
+
+  msg('Deleting…');
+  showAlert($('alertError'), false);
+  showAlert($('alertSuccess'), false);
+
+  try{
+    const res = await apiPost({action:'deleteitem', item});
+    if(res.ok){
+      msg('Item deleted ✔'); showAlert($('alertSuccess'), true);
+      await refreshList();
+    }else{
+      msg('Failed: ' + (res.error||'Unknown error')); showAlert($('alertError'), true);
+    }
+  }catch(ex){
+    msg('Network error: ' + ex.message); showAlert($('alertError'), true);
   }finally{
-    setSavingState(false);
+    __pendingDeleteItem = null;
   }
 }
 
-// ===== Small helper to load list with loader =====
+// ===== Refresh (unchanged) =====
 async function refreshList(){
   const loading = $('listLoading');
   const ul = $('itemList');
@@ -135,34 +170,37 @@ async function refreshList(){
   try{
     const list = await apiGet({action:'items'});
     renderList(list.data||[]);
-  }catch(_){
-    // on error, just show empty state
+  }catch{
     renderList([]);
   }
 }
 
-// ===== Boot =====
+// ===== Boot (unchanged ids & bindings) =====
 window.addEventListener('DOMContentLoaded', async ()=>{
-  // bind buttons (kept ids)
-  $('btnSubmit').addEventListener('click', (e)=>{
-    // ensure form submit path for HTML5 validation
-    e.preventDefault();
-    addItem();
-  });
-  $('btnClear').addEventListener('click', ()=>{
-    $('newItem').value='';
-    msg('Cleared');
-    const form = $('itemForm');
-    if(form) form.classList.remove('was-validated');
-  });
-  const btnRefresh = $('btnRefresh');
-  if(btnRefresh){
-    btnRefresh.addEventListener('click', (e)=>{
-      e.preventDefault();
-      refreshList();
+  const modalEl = $('confirmDeleteModal');
+  if (modalEl && window.bootstrap && bootstrap.Modal){
+    __confirmModal = new bootstrap.Modal(modalEl);
+  }
+  const confirmBtn = $('confirmDeleteBtn');
+  if(confirmBtn){
+    confirmBtn.addEventListener('click', async ()=>{
+      confirmBtn.disabled = true;
+      try{ await performDelete(); }
+      finally{ confirmBtn.disabled = false; __confirmModal && __confirmModal.hide(); }
     });
   }
 
-  // Initial load: show loader until list is ready
+  $('btnSubmit').addEventListener('click', (e)=>{ e.preventDefault(); addItem(); });
+  $('btnClear').addEventListener('click', ()=>{ $('newItem').value=''; msg('Cleared'); $('itemForm')?.classList.remove('was-validated'); });
+  $('btnRefresh')?.addEventListener('click', (e)=>{ e.preventDefault(); refreshList(); });
+
+  const ul = $('itemList');
+  if(ul){
+    ul.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.btn-delete');
+      if(btn){ e.preventDefault(); deleteItem(btn.getAttribute('data-item')); }
+    });
+  }
+
   await refreshList();
 });

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Delete Hisab — NewBazar</title>
+
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- (Optional) আপনার নিজের styles.css থাকলে আগের মতোই থাকবে -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    body { background:#f8fafc; }
+    .card { border:0; box-shadow:0 10px 24px rgba(0,0,0,.06); }
+    .subtle { color:#64748b; }
+    .pill { border-radius: 999px; }
+
+    /* Hisab list cards */
+    .h-card{
+      border:1px solid #e5e7eb;
+      border-radius: .9rem;
+      padding: .9rem 1rem;
+      background:#fff;
+      box-shadow:0 2px 10px rgba(0,0,0,.04);
+      transition:transform .1s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .h-card:hover{
+      transform:translateY(-1px);
+      box-shadow:0 12px 22px rgba(0,0,0,.07);
+      border-color:#d1d5db;
+    }
+
+    .h-title{ font-weight:700; color:#0f172a; }
+    .h-meta{ font-size:.9rem; color:#475569; }
+    .price-badge{ font-weight:700; }
+
+    /* Responsive grid */
+    .hisab-grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:.75rem;
+    }
+    @media (max-width: 575.98px){
+      .hisab-grid{
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .spinner-wrap{ min-height: 140px; }
+  </style>
+</head>
+<body>
+
+  <div class="container py-3">
+    <!-- Top nav buttons -->
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+      <a href="index.html" class="btn btn-outline-primary btn-sm">
+        &larr; Back to Home
+      </a>
+      <a href="hisab.html" class="btn btn-outline-secondary btn-sm">
+        ← Back to Hisab Add
+      </a>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+      <h1 class="mb-0">Delete Hisab</h1>
+      <span id="monthBadge" class="badge text-bg-light border pill px-3 py-2">
+        Current Month
+      </span>
+    </div>
+    <p class="subtle mb-3">
+      চলতি মাসের হিসাবগুলো নিচে দেখানো হচ্ছে। যেকোন এন্ট্রি <span class="text-danger fw-semibold">Delete</span> করা যাবে।
+    </p>
+
+    <!-- Alerts -->
+    <div id="alertSuccess" class="alert alert-success d-none" role="alert" aria-live="polite">✔️ ডিলিট সম্পন্ন হয়েছে</div>
+    <div id="alertError" class="alert alert-danger d-none" role="alert" aria-live="polite">❌ সমস্যা হয়েছে, আবার চেষ্টা করুন</div>
+
+    <!-- Toolbar -->
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+      <button id="btnRefresh" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div id="listLoading" class="spinner-wrap d-flex justify-content-center align-items-center">
+      <div class="spinner-border" role="status" aria-hidden="true"></div>
+      <span class="ms-2">লোড হচ্ছে...</span>
+    </div>
+
+    <!-- Empty -->
+    <div id="listEmpty" class="text-center text-body-secondary py-5 d-none">
+      চলতি মাসে কোনো হিসাব পাওয়া যায়নি।
+    </div>
+
+    <!-- List -->
+    <div id="hisabList" class="hisab-grid d-none"></div>
+  </div>
+
+  <!-- Delete confirm modal -->
+  <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmDeleteTitle">আপনি কি নিশ্চিত?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">এই হিসাবটি স্থায়ীভাবে মুছে ফেলা হবে: <strong id="confirmSummary">—</strong></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">বাতিল</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+            <i class="bi bi-trash me-1"></i> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="config.js"></script>
+  <script src="delete.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

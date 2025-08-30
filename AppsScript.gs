@@ -167,6 +167,55 @@ function doGet(e){
       });
     }
 
+
+    if(action === 'listhisab'){
+      let year  = parseInt((params.year  || '').toString(), 10);
+      let month = parseInt((params.month || '').toString(), 10);
+      const now = new Date();
+      if(!year || !month){
+        year  = now.getFullYear();
+        month = now.getMonth() + 1;
+      }
+
+      const sh = getSheet(SHEET_HISAB);
+      const n = Math.max(sh.getLastRow() - 1, 0);
+      const rows = n ? sh.getRange(2, 1, n, 4).getValues() : [];
+
+      const list = [];
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        const dt = parseToDate(r[0]);
+        const item = (r[1] || '').toString();
+        const price = Number(r[2]) || 0;
+        const desc = r[3];
+
+        if (dt && dt.getFullYear() === year && (dt.getMonth() + 1) === month) {
+          list.push({
+            id: String(i + 2),   // spreadsheet row number
+            date: toYMD(dt),
+            item,
+            price,
+            desc,
+            _dateObj: dt         // sorting-এর জন্য অস্থায়ী
+          });
+        }
+      }
+
+      // 🔽 এখানে DESC order এ sort করা হলো
+      list.sort((a, b) => b._dateObj - a._dateObj);
+
+      // অস্থায়ী ফিল্ড বাদ দিয়ে পাঠানো
+      const result = list.map(x => ({
+        id: x.id,
+        date: x.date,
+        item: x.item,
+        price: x.price,
+        desc: x.desc
+      }));
+
+      return ok(result);
+    }
+
     return err('Unknown action');
   }catch(ex){
     console.log('Catch ex:', ex, 'Local params:', JSON.stringify(e));
@@ -188,7 +237,22 @@ function doPost(e){
       getSheet(SHEET_ITEMS).appendRow([item]);
       return ok({added:item});
     }
-
+    // delete item
+    if(action === 'deleteitem' || raw === 'deleteItem'){
+      const item = (body.item || '').trim();
+      if(!item) return err('Item required');
+      const sh = getSheet(SHEET_ITEMS);
+      const n = Math.max(sh.getLastRow()-1, 0);
+      if(n){
+        const values = sh.getRange(2,1,n,1).getValues().flat();
+        const idx = values.findIndex(v => v === item);
+        if(idx !== -1){
+          sh.deleteRow(idx + 2); // +2 for header offset
+          return ok({deleted:item});
+        }
+      }
+      return err('Item not found');
+    }
     // add hisab
     if(action === 'addhisab' || raw === 'addHisab'){
       const dateIn = body.date;              // "8/11/2025" বা "2025/08/11" বা ISO
@@ -209,6 +273,21 @@ function doPost(e){
 
       return ok({saved:true});
     }
+
+    // delete hisab by spreadsheet row id (returned from listhisab)
+    if(action === 'deletehisab'){
+      const idRaw = (body.id || '').toString().trim();
+      const row = parseInt(idRaw, 10);
+      if(!row || row < 2) return err('Valid id (row) required');
+
+      const sh = getSheet(SHEET_HISAB);
+      const last = sh.getLastRow();
+      if(row > last) return err('ID out of range');
+
+      sh.deleteRow(row);
+      return ok({ deleted: true, id: row });
+    }
+
 
     return err('Unknown action');
   }catch(ex){ return err(ex.message); }
