@@ -1,13 +1,8 @@
-/* ===== Configurable backend action keys (adjust if needed) =====
-   আপনার Apps Script/WEP_APP_URL-এ যেভাবে রয়েছে সেভাবে শুধু এই দুইটা নাম বদলালেই হবে
-   উদাহরণ:
-   - তালিকা আনার জন্য:  action=listhisab  (month, year)
-   - ডিলিট করার জন্য:  action=deletehisab (id)
-*/
-const HISAB_LIST_ACTION   = 'listhisab';     // চলতি মাসের হিসাব লিস্ট
-const HISAB_DELETE_ACTION = 'deletehisab';   // নির্দিষ্ট হিসাব ডিলিট
+/* ===== Backend actions (unchanged) ===== */
+const HISAB_LIST_ACTION   = 'listhisab';
+const HISAB_DELETE_ACTION = 'deletehisab';
 
-/* ===== Small helpers (keep same style as other pages) ===== */
+/* ===== Helpers (unchanged) ===== */
 const $ = (id)=>document.getElementById(id);
 
 async function apiGet(params){
@@ -27,10 +22,9 @@ async function apiPost(payload){
 function show(el, yes){ el?.classList.toggle('d-none', !yes); }
 function alertShow(id, yes){ $(id)?.classList.toggle('d-none', !yes); }
 function formatBD(dateStr){
-  // yyyy-mm-dd -> d MMM, yyyy
   const d = new Date(dateStr);
   if (isNaN(d)) return dateStr || '';
-  return d.toLocaleDateString('bn-BD', { day:'numeric', month:'short', year:'numeric' });
+  return d.toLocaleDateString('bn-BD', { day:'numeric', month:'long', year:'numeric' });
 }
 function setMonthBadge(dt){
   const b = $('monthBadge');
@@ -38,11 +32,11 @@ function setMonthBadge(dt){
   if(b) b.textContent = `চলতি মাস: ${text}`;
 }
 
-/* ===== State ===== */
+/* ===== State (unchanged) ===== */
 let __hisabs = [];           // {id, date, item, price, desc}
 let __pendingDeleteId = null;
 
-/* ===== Render ===== */
+/* ===== Render: updated layout ===== */
 function renderList(list){
   const wrap = $('hisabList');
   const loading = $('listLoading');
@@ -53,42 +47,65 @@ function renderList(list){
 
   if(Array.isArray(list) && list.length){
     list.forEach(row=>{
-      // row: { id, date, item, price, desc }
+      // { id, date, item, price, desc }
       const card = document.createElement('div');
       card.className = 'h-card';
 
-      const top = document.createElement('div');
-      top.className = 'd-flex justify-content-between align-items-start gap-2';
-      // title + meta
-      const left = document.createElement('div');
-      const title = document.createElement('div');
-      title.className = 'h-title';
-      title.textContent = row.item || '—';
-      const meta = document.createElement('div');
-      meta.className = 'h-meta';
-      meta.textContent = `${formatBD(row.date)} · ${row.desc || 'No description'}`;
-      left.appendChild(title);
-      left.appendChild(meta);
+      // Header grid keeps price at right even on mobile
+      const head = document.createElement('div');
+      head.className = 'h-head';
 
-      // price badge
+      // left info
+      const info = document.createElement('div');
+
+      // 1) Date (bold)
+      const dateEl = document.createElement('div');
+      dateEl.className = 'h-date';
+      dateEl.textContent = formatBD(row.date);
+
+      // 2) Item (colored)
+      const itemEl = document.createElement('div');
+      itemEl.className = 'h-item';
+      itemEl.textContent = row.item || '—';
+
+      // 3) Description (badge), optional
+      const descContainer = document.createElement('div');
+      descContainer.className = 'h-desc';
+      const hasDesc = row.desc && String(row.desc).trim().length > 0;
+      if(hasDesc){
+        const badge = document.createElement('span');
+        badge.className = 'desc-badge';
+        badge.textContent = String(row.desc).trim();
+        descContainer.appendChild(badge);
+      }
+
+      info.appendChild(dateEl);
+      info.appendChild(itemEl);
+      if(hasDesc) info.appendChild(descContainer);
+
+      // right price (always on right)
+      const priceWrap = document.createElement('div');
       const price = document.createElement('span');
       price.className = 'badge text-bg-success price-badge pill';
       price.textContent = (row.price != null ? row.price : 0) + ' ৳';
+      priceWrap.appendChild(price);
 
-      top.appendChild(left);
-      top.appendChild(price);
+      head.appendChild(info);
+      head.appendChild(priceWrap);
 
-      // actions
+      // actions: small red delete button
       const actions = document.createElement('div');
       actions.className = 'd-flex justify-content-end mt-2';
       const delBtn = document.createElement('button');
-      delBtn.className = 'btn btn-sm btn-danger';
+      delBtn.className = 'btn btn-sm btn-danger'; // ছোট + লাল
       delBtn.innerHTML = '<i class="bi bi-trash me-1"></i>Delete';
       delBtn.setAttribute('data-id', row.id);
-      delBtn.setAttribute('data-summary', `${row.item} (${formatBD(row.date)}) — ${row.price}৳`);
+      delBtn.setAttribute('data-summary', `${formatBD(row.date)} · ${row.item} — ${row.price}৳`);
+
       actions.appendChild(delBtn);
 
-      card.appendChild(top);
+      // build card
+      card.appendChild(head);
       card.appendChild(actions);
       wrap.appendChild(card);
     });
@@ -100,7 +117,7 @@ function renderList(list){
   }
 }
 
-/* ===== Load current month list ===== */
+/* ===== Load current month (unchanged) ===== */
 async function loadCurrentMonth(){
   alertShow('alertSuccess', false);
   alertShow('alertError', false);
@@ -109,7 +126,7 @@ async function loadCurrentMonth(){
   setMonthBadge(now);
 
   const year  = now.getFullYear();
-  const month = now.getMonth() + 1; // 1..12
+  const month = now.getMonth() + 1;
 
   show($('listLoading'), true);
   show($('hisabList'), false);
@@ -117,7 +134,6 @@ async function loadCurrentMonth(){
 
   try{
     const res = await apiGet({ action: HISAB_LIST_ACTION, year, month });
-    // প্রত্যাশিত payload: { ok:true, data:[{id,date,item,price,desc}, ...] }
     if(res && res.ok){
       __hisabs = Array.isArray(res.data) ? res.data : [];
       renderList(__hisabs);
@@ -133,7 +149,7 @@ async function loadCurrentMonth(){
   }
 }
 
-/* ===== Delete flow (Bootstrap modal confirm) ===== */
+/* ===== Delete flow (unchanged) ===== */
 let __confirmModal = null;
 
 function openConfirm(id, summary){
@@ -161,7 +177,7 @@ async function performDelete(){
   }
 }
 
-/* ===== Boot ===== */
+/* ===== Boot (unchanged IDs/bindings) ===== */
 window.addEventListener('DOMContentLoaded', async ()=>{
   // init modal
   const modalEl = document.getElementById('confirmDeleteModal');
