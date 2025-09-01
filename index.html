@@ -33,10 +33,9 @@
     .net-title{ font-weight: 700; color:#0f172a; font-size: 1.15rem; }
     .net-muted{ color:#64748b; }
     .net-actions{ display:flex; gap:.5rem; justify-content:center; margin-top:.75rem; }
-
     .disabled-link{ pointer-events:none !important; opacity:.5; filter:grayscale(20%); }
 
-    /* NEW: data status pills */
+    /* Small data status pill */
     .data-status{ margin-left:.5rem; }
   </style>
 </head>
@@ -63,11 +62,10 @@
 <div class="container py-3">
   <div class="d-flex justify-content-center align-items-center mb-3">
     <h1 class="mb-0 text-center">Bazar</h1>
-    <!-- NEW: cached/live badge -->
     <span id="dataStatus" class="badge rounded-pill text-bg-secondary data-status d-none">Cached</span>
   </div>
 
-  <!-- Quick links -->
+  <!-- Quick links (আগের মতোই) -->
   <div class="card shadow-sm mb-3">
     <div class="card-body">
       <div class="row g-2 quick-links">
@@ -78,10 +76,9 @@
     </div>
   </div>
 
-  <!-- Summary -->
+  <!-- Summary (আগের মতোই) -->
   <div class="card shadow-sm">
     <div class="card-body text-center">
-      <!-- CURRENT MONTH -->
       <h2 id="monthTitle" class="h5 mb-1">Loading...</h2>
       <p id="totalLine" class="mb-2">
         <span class="text-success fw-semibold">Grand</span>
@@ -103,7 +100,6 @@
 
       <hr class="rule">
 
-      <!-- PREVIOUS MONTH -->
       <h2 id="prevTitle" class="h5 mb-1">Loading...</h2>
       <p id="prevTotalLine" class="mb-2">
         <span class="text-success fw-semibold">Grand</span>

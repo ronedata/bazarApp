@@ -13,8 +13,8 @@ function monthParts(offset=0){
   return { apiMonth:`${y}-${m}`, label:new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(d) };
 }
 
-// ===== NEW: Cache helpers =====
-const CACHE_VERSION = 'v1';
+// ===== NEW: Cache helpers (kept from earlier) =====
+const CACHE_VERSION = 'v1-fast';
 const CK = {
   SHEET_VER: `nb:sheetver:${CACHE_VERSION}`,
   CUR:       `nb:report:cur:${CACHE_VERSION}`,
@@ -26,25 +26,48 @@ function cacheGet(key){
 function cacheSet(key, val){
   try{ localStorage.setItem(key, JSON.stringify({ _ts:Date.now(), data: val })); }catch(_){}
 }
-function setDataStatus(mode){ // 'live'|'cached'|null
+function setDataStatus(mode){ // 'live'|'cached'|'checking'|null
   const el = $('dataStatus');
   if(!el) return;
   if(!mode){ el.classList.add('d-none'); return; }
-  el.textContent = (mode==='cached'?'Cached':'Live');
-  el.className = `badge rounded-pill data-status ${mode==='cached'?'text-bg-secondary':'text-bg-success'}`;
+  const map = { live:'text-bg-success', cached:'text-bg-secondary', checking:'text-bg-warning' };
+  el.textContent = (mode==='cached'?'Cached': mode==='live'?'Live':'Checking…');
+  el.className = `badge rounded-pill data-status ${map[mode]||'text-bg-secondary'}`;
   el.classList.remove('d-none');
 }
 
-// ===== NEW: Sheet version check from backend =====
-async function fetchSheetVersion(){
-  // ok({ver:number, iso:string})
-  const res = await apiGet({ action:'sheetver' });
-  if(res?.ok && res.data?.ver) return Number(res.data.ver);
-  // fallback: if not available yet, force refresh with a random ver
-  return Date.now();
+// ===== NEW: Faster online check =====
+// 1) সঙ্গে সঙ্গে navigator.onLine true হলে True
+// 2) দুটো পিং **প্যারালাল** (১.২–১.৫ সেক টাইমআউট): gstatic 204 + আপনার sheetver
+//    ১.৫ সেকেন্ডের মধ্যে যেকোনো একটি সফল হলেই online ধরা হবে
+function startAbort(ms){
+  const ctrl = new AbortController(); const t=setTimeout(()=>ctrl.abort(), ms);
+  return { signal: ctrl.signal, cancel: ()=>clearTimeout(t) };
+}
+async function ping204(){
+  const {signal, cancel} = startAbort(1200);
+  try{ await fetch('https://www.gstatic.com/generate_204', { mode:'no-cors', cache:'no-store', signal }); cancel(); return true; }
+  catch{ cancel(); return false; }
+}
+async function pingSheetver(){
+  const { apiMonth } = monthParts(0); // শুধু query freshness এর জন্য t যোগ
+  const u = WEB_APP_URL + '?' + new URLSearchParams({ action:'sheetver', t: Date.now(), m: apiMonth });
+  const {signal, cancel} = startAbort(1500);
+  try{ await fetch(u, { method:'GET', cache:'no-store', signal }); cancel(); return true; }
+  catch{ cancel(); return false; }
+}
+async function quickOnline(){
+  if(typeof navigator!=='undefined' && navigator.onLine) return true;
+  let online = false;
+  // parallel probes
+  ping204().then(ok=>{ if(ok) online = true; });
+  pingSheetver().then(ok=>{ if(ok) online = true; });
+  // wait up to 1500ms max
+  await new Promise(res=>setTimeout(res, 1500));
+  return online;
 }
 
-// ===== Overlay + internet helpers (kept, slightly reused) =====
+// ===== Overlay helpers (kept) =====
 function setQuickLinksDisabled(disabled=true){
   document.querySelectorAll('.quick-links a.btn').forEach(a=>{
     a.classList.toggle('disabled-link', disabled);
@@ -61,17 +84,8 @@ function showOverlay(state){ // 'loading'|'offline'|'hide'
   offline?.classList.toggle('d-none', state!=='offline');
 }
 function timeout(ms){ return new Promise(res=>setTimeout(res, ms)); }
-async function pingOnline(){
-  if(typeof navigator!=='undefined' && navigator.onLine===false) return false;
-  try{
-    const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(), 4000);
-    await fetch('https://www.gstatic.com/generate_204',{mode:'no-cors',signal:ctrl.signal,cache:'no-store'}); clearTimeout(t);
-    return true;
-  }catch(_){}
-  return false;
-}
 
-// ===== Rendering (kept, refactored into pure render) =====
+// ===== Rendering (kept) =====
 function renderSummary(curData, prevData){
   const cur = monthParts(0);
   const prev = monthParts(-1);
@@ -79,11 +93,9 @@ function renderSummary(curData, prevData){
   $('monthTitle').textContent = cur.label;
   $('prevTitle').textContent  = prev.label;
 
-  // current
   const curTotal   = Number(curData?.total||0);
   const curPerItem = curData?.perItem||{};
   const curRows    = curData?.rows||[];
-
   $('totalLine').innerHTML = `<span class="text-success fw-semibold">Grand</span> <span class="muted">Total:</span> <span class="fw-bold text-primary">${fmt(curTotal)}</span>`;
   const rent = Number(curPerItem['বাসা ভাড়া']||0);
   const elec = Number(curPerItem['বিদ্যুৎ বিল']||0);
@@ -95,7 +107,6 @@ function renderSummary(curData, prevData){
   $('grandFormulaCur').textContent = `Total: ${fmt(curTotal)} − ${fmt(curMinus)} = ${fmt(curNet)}`;
   if(curRows.length===0 && $('emptyMsg')) $('emptyMsg').style.display='block';
 
-  // previous
   const pTotal = Number(prevData?.total||0);
   const pPer   = prevData?.perItem||{};
   $('prevTotalLine').innerHTML = `<span class="text-success fw-semibold">Grand</span> <span class="muted">Total:</span> <span class="fw-bold text-primary">${fmt(pTotal)}</span>`;
@@ -108,7 +119,6 @@ function renderSummary(curData, prevData){
   const pMinus = pRent+pElec+pWifi; const pNet = pTotal - pMinus;
   $('grandFormulaPrev').textContent = `Total: ${fmt(pTotal)} − ${fmt(pMinus)} = ${fmt(pNet)}`;
 
-  // details button
   const b=$('btnDetails');
   if(b && !b.__bound){
     b.addEventListener('click', ()=>renderDetails(curData?.perItem||{}));
@@ -128,68 +138,82 @@ function renderDetails(perItem){
   });
 }
 
-// ===== Fetchers (kept) =====
+// ===== Backend helpers (kept) =====
 async function fetchReportFor(monthStr){
   const res = await apiGet({ action:'report', month: monthStr });
   if(!res?.ok) throw new Error('report failed');
   return res.data;
 }
+async function fetchSheetVersion(){
+  try{
+    const res = await apiGet({ action:'sheetver', t: Date.now() });
+    if(res?.ok && res.data?.ver) return Number(res.data.ver);
+  }catch(_){}
+  return Date.now();
+}
 
-// ===== Main flow with caching =====
-async function initWithCaching(){
+// ===== Main flow (FAST): render from cache immediately if available =====
+async function fastInit(){
   setQuickLinksDisabled(true);
   showOverlay('loading');
-
-  // Try online quickly
-  const online = await pingOnline();
 
   const cur = monthParts(0), prev = monthParts(-1);
   const cachedVer = (cacheGet(CK.SHEET_VER)||{}).data;
   const cachedCur = cacheGet(CK.CUR)?.data;
   const cachedPrev= cacheGet(CK.PREV)?.data;
 
-  // OFFLINE path → show cache if available
+  // 1) যদি ক্যাশ থাকে → সাথে সাথে UI দেখাই (non-blocking)
+  if(cachedCur && cachedPrev){
+    setDataStatus('checking');
+    renderSummary(cachedCur, cachedPrev);
+    showOverlay('hide');                // overlay তে আর আটকে রাখব না
+  }
+
+  // 2) দ্রুত অনলাইন চেক (≤1.5s)
+  const online = await quickOnline();
+
   if(!online){
+    // অফলাইন হলে
     if(cachedCur && cachedPrev){
-      showOverlay('hide'); setQuickLinksDisabled(true); // লিংকগুলো অফলাইনেই নিষ্ক্রিয় থাকুক
+      setQuickLinksDisabled(true);      // অফলাইনে লিংকগুলো নিষ্ক্রিয় থাকুক
       setDataStatus('cached');
-      renderSummary(cachedCur, cachedPrev);
-      return;
+      return;                           // ক্যাশড UI দেখানোই থাকবে
     }else{
-      showOverlay('offline'); return;
+      showOverlay('offline');
+      return;
     }
   }
 
-  // ONLINE → get sheet version first
-  let serverVer;
-  try{ serverVer = await fetchSheetVersion(); }catch{ serverVer = Date.now(); }
+  // 3) অনলাইনে এলে ভার্সন দেখুন
+  const serverVer = await fetchSheetVersion();
 
-  // If same version & have cache, use cache (no network hit)
+  // 3a) ভার্সন একই + ক্যাশ আছে → ক্যাশই রাখুন (super fast)
   if(cachedVer && cachedVer === serverVer && cachedCur && cachedPrev){
-    showOverlay('hide'); setQuickLinksDisabled(false);
+    setQuickLinksDisabled(false);
     setDataStatus('cached');
-    renderSummary(cachedCur, cachedPrev);
+    showOverlay('hide');
     return;
   }
 
-  // Otherwise fetch fresh, then cache & render
+  // 3b) নাহলে fresh ফেচ → ক্যাশ আপডেট → UI রেন্ডার
   try{
     const [curData, prevData] = await Promise.all([
       fetchReportFor(cur.apiMonth),
       fetchReportFor(prev.apiMonth)
     ]);
-    cacheSet(CK.CUR, curData);
+    cacheSet(CK.CUR,  curData);
     cacheSet(CK.PREV, prevData);
     cacheSet(CK.SHEET_VER, serverVer);
-    showOverlay('hide'); setQuickLinksDisabled(false);
+    setQuickLinksDisabled(false);
     setDataStatus('live');
     renderSummary(curData, prevData);
+    showOverlay('hide');
   }catch(_){
-    // fallback: if fetch failed but cache present
+    // ফেচ ব্যর্থ হলেও যদি আগের ক্যাশ থাকে, সেটাই দেখান
     if(cachedCur && cachedPrev){
-      showOverlay('hide'); setQuickLinksDisabled(false);
+      setQuickLinksDisabled(false);
       setDataStatus('cached');
-      renderSummary(cachedCur, cachedPrev);
+      showOverlay('hide');
     }else{
       $('errorMsg').style.display='block';
       showOverlay('offline');
@@ -199,6 +223,6 @@ async function initWithCaching(){
 
 // Boot
 window.addEventListener('DOMContentLoaded', async ()=>{
-  $('btnRetryNet')?.addEventListener('click', initWithCaching);
-  await initWithCaching();
+  $('btnRetryNet')?.addEventListener('click', fastInit);
+  await fastInit();
 });
