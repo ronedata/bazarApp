@@ -216,6 +216,19 @@ function doGet(e){
       return ok(result);
     }
 
+    // ===== GET action=sheetver → { ok:true, data:{ ver, iso } }
+    if (action === 'sheetver') {
+      try {
+        const file = DriveApp.getFileById(SPREADSHEET_ID);
+        const dt   = file.getLastUpdated();            // Date
+        const ver  = dt.getTime();                     // number
+        const iso  = Utilities.formatDate(dt, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ssXXX");
+        return ok({ ver: ver, iso: iso });
+      } catch (ex) {
+        return err('sheetver failed: ' + (ex && ex.message));
+      }
+    }
+
     return err('Unknown action');
   }catch(ex){
     console.log('Catch ex:', ex, 'Local params:', JSON.stringify(e));

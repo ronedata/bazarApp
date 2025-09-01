@@ -16,10 +16,10 @@
     .kpi .name{min-width:110px;display:inline-block}
     .muted{color:#6c757d}
 
-    /* ============ NEW: Network Overlay ============ */
+    /* Network Overlay */
     .net-overlay{
       position: fixed; inset: 0;
-      background: rgba(248,250,252,.96); /* soft */
+      background: rgba(248,250,252,.96);
       backdrop-filter: blur(2px);
       display: flex; align-items: center; justify-content: center;
       z-index: 1055;
@@ -28,24 +28,21 @@
       width: min(92vw, 380px);
       background: #fff; border: 0; border-radius: 1rem;
       box-shadow: 0 18px 40px rgba(0,0,0,.12);
-      padding: 1.25rem;
-      text-align: center;
+      padding: 1.25rem; text-align: center;
     }
     .net-title{ font-weight: 700; color:#0f172a; font-size: 1.15rem; }
     .net-muted{ color:#64748b; }
     .net-actions{ display:flex; gap:.5rem; justify-content:center; margin-top:.75rem; }
 
-    /* Disabled state for links before internet ready */
-    .disabled-link{
-      pointer-events: none !important;
-      opacity: .5;
-      filter: grayscale(20%);
-    }
+    .disabled-link{ pointer-events:none !important; opacity:.5; filter:grayscale(20%); }
+
+    /* NEW: data status pills */
+    .data-status{ margin-left:.5rem; }
   </style>
 </head>
 <body class="bg-light">
 
-<!-- ============ NEW: Overlay (default visible) ============ -->
+<!-- Overlay -->
 <div id="netOverlay" class="net-overlay" aria-live="polite">
   <div class="net-card">
     <div id="netLoading" class="d-flex flex-column align-items-center" role="status" aria-busy="true">
@@ -62,10 +59,13 @@
     </div>
   </div>
 </div>
-<!-- ======================================================== -->
 
 <div class="container py-3">
-  <h1 class="mb-3 text-center">Bazar</h1>
+  <div class="d-flex justify-content-center align-items-center mb-3">
+    <h1 class="mb-0 text-center">Bazar</h1>
+    <!-- NEW: cached/live badge -->
+    <span id="dataStatus" class="badge rounded-pill text-bg-secondary data-status d-none">Cached</span>
+  </div>
 
   <!-- Quick links -->
   <div class="card shadow-sm mb-3">
@@ -81,7 +81,6 @@
   <!-- Summary -->
   <div class="card shadow-sm">
     <div class="card-body text-center">
-
       <!-- CURRENT MONTH -->
       <h2 id="monthTitle" class="h5 mb-1">Loading...</h2>
       <p id="totalLine" class="mb-2">
@@ -89,7 +88,6 @@
         <span class="muted">Total:</span>
         <span class="fw-bold text-primary">Loading...</span>
       </p>
-
       <div class="kpi-row text-start">
         <div class="kpi d-flex justify-content-between">
           <span class="name">বাসা ভাড়া</span><span id="rentValue">--</span>
@@ -101,19 +99,17 @@
           <span class="name">Wifi</span><span id="wifiValue">--</span>
         </div>
       </div>
-
       <p class="mt-2 mb-2 muted" id="grandFormulaCur"></p>
 
       <hr class="rule">
 
-      <!-- PREVIOUS MONTH (header size same as current) -->
+      <!-- PREVIOUS MONTH -->
       <h2 id="prevTitle" class="h5 mb-1">Loading...</h2>
       <p id="prevTotalLine" class="mb-2">
         <span class="text-success fw-semibold">Grand</span>
         <span class="muted">Total:</span>
         <span class="fw-bold text-primary">Loading...</span>
       </p>
-
       <div class="kpi-row text-start">
         <div class="kpi d-flex justify-content-between">
           <span class="name">বাসা ভাড়া</span><span id="prevRent">--</span>
@@ -125,7 +121,6 @@
           <span class="name">Wifi</span><span id="prevWifi">--</span>
         </div>
       </div>
-
       <p class="mt-2 mb-3 muted" id="grandFormulaPrev"></p>
 
       <button class="btn btn-success btn-sm" id="btnDetails">Details Load</button>
