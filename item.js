@@ -20,7 +20,7 @@ const msg = (t)=>{$('msg').textContent = t;};
 // ===== Alerts/validation helpers (unchanged) =====
 function setSavingState(isSaving){
   const submitBtn = $('btnSubmit');
-  const input = $('newItem');
+  const input = $('itemName');
   if(submitBtn){
     submitBtn.disabled = isSaving;
     const spinner = submitBtn.querySelector('.btn-spinner');
@@ -72,7 +72,7 @@ function renderList(items){
 
       const btn = document.createElement('button');
       btn.className = 'btn btn-sm btn-danger btn-delete';
-      btn.innerHTML = '<i class="bi bi-trash me-1" aria-hidden="true"></i>Delete';
+      btn.innerHTML = '<i class="bi bi-trash"></i><span class="d-none d-sm-inline ms-1">Delete</span>';
       btn.setAttribute('data-item', x);
 
       actions.appendChild(btn);
@@ -89,14 +89,14 @@ function renderList(items){
   }
 
   const card = $('listCard');
-  if(card) card.hidden = false;
+  if(card) card.classList.remove('d-none');
 }
 
 // ===== addItem (unchanged logic) =====
 async function addItem(){
   if(!validateForm()) return;
 
-  const item = $('newItem').value.trim();
+  const item = $('itemName').value.trim();
   if(!item){ msg('Item name required'); return; }
 
   msg('Saving…');
@@ -107,7 +107,7 @@ async function addItem(){
     setSavingState(true);
     const res = await apiPost({action:'additem', item});
     if(res.ok){
-      $('newItem').value='';
+      $('itemName').value='';
       const form = $('itemForm'); if(form) form.classList.remove('was-validated');
       msg('Item added ✔'); showAlert($('alertSuccess'), true);
       await refreshList();
@@ -160,6 +160,9 @@ async function performDelete(){
 
 // ===== Refresh (unchanged) =====
 async function refreshList(){
+  const card = $('listCard');
+  if(card) card.classList.remove('d-none');
+
   const loading = $('listLoading');
   const ul = $('itemList');
   const empty = $('listEmpty');
@@ -190,9 +193,9 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     });
   }
 
-  $('btnSubmit').addEventListener('click', (e)=>{ e.preventDefault(); addItem(); });
-  $('btnClear').addEventListener('click', ()=>{ $('newItem').value=''; msg('Cleared'); $('itemForm')?.classList.remove('was-validated'); });
-  $('btnRefresh')?.addEventListener('click', (e)=>{ e.preventDefault(); refreshList(); });
+  $('btnSubmit')?.addEventListener('click', (e)=>{ e.preventDefault(); addItem(); });
+  $('btnClear')?.addEventListener('click', ()=>{ $('itemName').value=''; msg('Cleared'); $('itemForm')?.classList.remove('was-validated'); });
+  $('btnLoadItems')?.addEventListener('click', (e)=>{ e.preventDefault(); refreshList(); });
 
   const ul = $('itemList');
   if(ul){
@@ -202,5 +205,4 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     });
   }
 
-  await refreshList();
 });

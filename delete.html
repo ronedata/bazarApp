@@ -12,67 +12,6 @@
   <!-- Optional: আপনার styles.css থাকলে অপরিবর্তিত রাখুন -->
   <link rel="stylesheet" href="styles.css" />
 
-  <style>
-    body { background:#f8fafc; }
-    .card { border:0; box-shadow:0 10px 24px rgba(0,0,0,.06); }
-    .subtle { color:#64748b; }
-    .pill { border-radius: 999px; }
-
-    /* ===== Beautiful Card ===== */
-    .h-card{
-      border:1px solid #e5e7eb;
-      border-radius:.9rem;
-      padding: .9rem 1rem;
-      background:#fff;
-      box-shadow:0 2px 10px rgba(0,0,0,.04);
-      transition:transform .1s ease, box-shadow .2s ease, border-color .2s ease;
-    }
-    .h-card:hover{
-      transform:translateY(-1px);
-      box-shadow:0 12px 22px rgba(0,0,0,.07);
-      border-color:#d1d5db;
-    }
-
-    /* Header part: left (date,item,desc) | right (price) — grid keeps price on right even on mobile */
-    .h-head{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      column-gap:.75rem;
-      align-items:start;
-    }
-
-    .h-date{ font-weight:800; color:#0f172a; line-height:1.2; }
-    /* Item টেক্সটকে রঙিন করা হলো (Bootstrap primary) */
-    .h-item{ font-weight:700; color: var(--bs-primary); margin-top:.15rem; }
-    .h-desc{ margin-top:.25rem; }
-    .desc-badge{
-      display:inline-block;
-      padding:.35rem .6rem;
-      font-size:.8rem;
-      border-radius:999px;
-      background:#e7f3ff;
-      color:#0b5ed7;
-      border:1px solid #cfe2ff;
-    }
-
-    .price-badge{
-      font-weight:800;
-      padding:.45rem .65rem;
-      white-space: nowrap; /* মোবাইলে সবসময় ডান পাশে ফিট হবে */
-    }
-
-    /* Responsive grid for list */
-    .hisab-grid{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap:.75rem;
-    }
-    @media (max-width: 575.98px){
-      .hisab-grid{ grid-template-columns: 1fr; }
-    }
-
-    .spinner-wrap{ min-height: 140px; }
-  </style>
 </head>
 <body>
 

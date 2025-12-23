@@ -70,7 +70,7 @@ function renderList(list){
 
       // 3) Description (badge), optional
       const descContainer = document.createElement('div');
-      descContainer.className = 'h-desc';
+      descContainer.className = 'h-desc'; // styles.css এ এখন এই ক্লাস আছে
       const hasDesc = row.desc && String(row.desc).trim().length > 0;
       if(hasDesc){
         const badge = document.createElement('span');
@@ -98,7 +98,7 @@ function renderList(list){
       actions.className = 'd-flex justify-content-end mt-2';
       const delBtn = document.createElement('button');
       delBtn.className = 'btn btn-sm btn-danger'; // ছোট + লাল
-      delBtn.innerHTML = '<i class="bi bi-trash me-1"></i>Delete';
+      delBtn.innerHTML = '<i class="bi bi-trash"></i><span class="d-none d-sm-inline ms-1">Delete</span>';
       delBtn.setAttribute('data-id', row.id);
       delBtn.setAttribute('data-summary', `${formatBD(row.date)} · ${row.item} — ${row.price}৳`);
 

@@ -82,10 +82,15 @@ async function loadYearSummary(){
   if(!params.item){
     // per-month list (Jan..Dec)
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    Object.keys(lastPerMonth).sort().forEach((mm,idx)=>{
-      const li = document.createElement('li');
-      li.textContent = `${monthNames[idx]}: ${fmt(lastPerMonth[mm])}`;
-      perMonthUL.appendChild(li);
+    Object.keys(lastPerMonth).sort().forEach((mm)=>{
+      // mm is usually "01", "02" etc.
+      const mIdx = parseInt(mm, 10) - 1;
+      if(monthNames[mIdx]){
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-1';
+        li.innerHTML = `<span>${monthNames[mIdx]}</span> <span class="fw-bold">${fmt(lastPerMonth[mm])}</span>`;
+        perMonthUL.appendChild(li);
+      }
     });
 
     // Bazer Expense = Total − (rent + electric + wifi)

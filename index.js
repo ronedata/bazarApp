@@ -96,7 +96,7 @@ function renderSummary(curData, prevData){
   const curTotal   = Number(curData?.total||0);
   const curPerItem = curData?.perItem||{};
   const curRows    = curData?.rows||[];
-  $('totalLine').innerHTML = `<span class="text-success fw-semibold">Grand</span> <span class="muted">Total:</span> <span class="fw-bold text-primary">${fmt(curTotal)}</span>`;
+  $('totalLine').textContent = fmt(curTotal) + ' ৳';
   const rent = Number(curPerItem['বাসা ভাড়া']||0);
   const elec = Number(curPerItem['বিদ্যুৎ বিল']||0);
   const wifi = Number(curPerItem['Wifi']||0);
@@ -104,12 +104,12 @@ function renderSummary(curData, prevData){
   $('electricValue').textContent = fmt(elec);
   $('wifiValue').textContent = fmt(wifi);
   const curMinus = rent+elec+wifi; const curNet = curTotal - curMinus;
-  $('grandFormulaCur').textContent = `Total: ${fmt(curTotal)} − ${fmt(curMinus)} = ${fmt(curNet)}`;
+  $('grandFormulaCur').textContent = `Net Cost: ${fmt(curNet)} ৳`;
   if(curRows.length===0 && $('emptyMsg')) $('emptyMsg').style.display='block';
 
   const pTotal = Number(prevData?.total||0);
   const pPer   = prevData?.perItem||{};
-  $('prevTotalLine').innerHTML = `<span class="text-success fw-semibold">Grand</span> <span class="muted">Total:</span> <span class="fw-bold text-primary">${fmt(pTotal)}</span>`;
+  $('prevTotalLine').textContent = fmt(pTotal) + ' ৳';
   const pRent = Number(pPer['বাসা ভাড়া']||0);
   const pElec = Number(pPer['বিদ্যুৎ বিল']||0);
   const pWifi = Number(pPer['Wifi']||0);
@@ -117,22 +117,29 @@ function renderSummary(curData, prevData){
   $('prevElectric').textContent = fmt(pElec);
   $('prevWifi').textContent = fmt(pWifi);
   const pMinus = pRent+pElec+pWifi; const pNet = pTotal - pMinus;
-  $('grandFormulaPrev').textContent = `Total: ${fmt(pTotal)} − ${fmt(pMinus)} = ${fmt(pNet)}`;
+  $('grandFormulaPrev').textContent = `Net Cost: ${fmt(pNet)} ৳`;
 
   const b=$('btnDetails');
+  const ul=$('summaryList');
   if(b && !b.__bound){
-    b.addEventListener('click', ()=>renderDetails(curData?.perItem||{}));
+    b.addEventListener('click', ()=>{
+      const show = ul.classList.toggle('d-none');
+      b.textContent = show ? 'Hide Details' : 'View Details';
+      if(show) renderDetails(prevData?.perItem||{});
+    });
     b.__bound=true;
   }
 }
+
 function renderDetails(perItem){
   const ul = $('summaryList');
+  if(!ul) return;
   ul.innerHTML = '';
   const items = Object.entries(perItem||{}).sort((a,b)=>b[1]-a[1]);
-  if(items.length===0){ ul.innerHTML = `<li class="list-group-item text-center text-muted">No details</li>`; return; }
+  if(items.length===0){ ul.innerHTML = `<li class="list-group-item text-center text-muted bg-light">No details</li>`; return; }
   items.forEach(([name,amt])=>{
     const li=document.createElement('li');
-    li.className='list-group-item d-flex justify-content-between align-items-center';
+    li.className='list-group-item d-flex justify-content-between align-items-center bg-light';
     li.innerHTML = `<span>${name}</span><span class="fw-semibold">${fmt(amt)}</span>`;
     ul.appendChild(li);
   });

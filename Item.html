@@ -1,178 +1,88 @@
 <!doctype html>
 <html lang="bn">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Item Add — NewBazar</title>
-
-  <!-- Bootstrap -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+  <title>Add New Item — NewBazar</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons (optional, শুধু ট্র্যাশ আইকনের জন্য) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-
-  <!-- আপনার বিদ্যমান stylesheet থাকলে এটি রাখুন -->
-  <link rel="stylesheet" href="styles.css">
-
-  <style>
-    /* === Page polish === */
-    body { background:#f8fafc; }
-    .card { border:0; box-shadow:0 8px 24px rgba(0,0,0,.06); }
-
-    /* === Current Items: beautiful + mobile-friendly === */
-    #listCard .card-body { padding: 1.25rem; }
-
-    /* লিস্ট কন্টেইনার */
-    #itemList { margin:0; padding:0; list-style:none; }
-
-    /* প্রতিটি আইটেমকে ছোট কার্ডের মতো দেখানো */
-    #itemList li.item-row{
-      background:#ffffff;
-      border:1px solid #e5e7eb;
-      border-radius: .75rem;
-      padding:.75rem .875rem;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:.75rem;
-      box-shadow:0 2px 10px rgba(0,0,0,.04);
-      transition:transform .1s ease, box-shadow .2s ease, border-color .2s ease;
-      margin-bottom:.6rem;     /* আইটেমগুলোর মধ্যে ফাঁক */
-    }
-    #itemList li.item-row:hover{
-      transform: translateY(-1px);
-      box-shadow:0 10px 20px rgba(0,0,0,.06);
-      border-color:#d1d5db;
-    }
-
-    /* নামটি সুন্দরভাবে দেখা, বড় টেক্সটে ও লম্বা হলে কাটা */
-    #itemList .item-name{
-      font-weight:600;
-      color:#0f172a;
-      line-height:1.35;
-      word-break:break-word;
-      flex:1 1 auto;
-    }
-
-    /* ডিলিট বাটনকে ফিক্সড-উইডথ রাখলে লাইনে সুন্দর বসে */
-    #itemList .item-actions{
-      display:flex; align-items:center; gap:.5rem; flex:0 0 auto;
-    }
-    #itemList .btn-delete{
-      min-width:108px;
-    }
-
-    /* মোবাইল: বাটন নিচে ফুল-উইডথ, টাচ-ফ্রেন্ডলি স্পেসিং */
-    @media (max-width: 575.98px){
-      #itemList li.item-row{
-        flex-direction:column;
-        align-items:stretch;
-        padding:.875rem;
-      }
-      #itemList .item-actions{
-        width:100%;
-      }
-      #itemList .btn-delete{
-        width:100%;
-      }
-    }
-
-    /* হালকা সাবটাইটেল / টিপস */
-    .subtle { color:#64748b; }
-    .spinner-wrap{ min-height:120px; }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-light">
 
-  <div class="container py-3">
+<body class="bg-light fade-in">
 
-    <!-- Back -->
-    <div class="mb-3">
-      <a href="index.html" class="btn btn-outline-success btn-sm">
-        &larr; Back to Home
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <!-- <h1 class="h3 mb-0">Add Item</h1> -->
+      <a href="index.html" class="btn btn-light border shadow-sm btn-sm rounded-pill text-secondary"> Back To 
+        <i class="bi bi-house"></i>
       </a>
     </div>
 
-    <h1 class="mb-3">Item Add</h1>
+    <div id="msg" class="mb-3 text-center fw-bold text-primary" aria-live="polite"></div>
+    <div id="alertSuccess" class="alert alert-success d-none" role="alert">Item saved successfully ✔</div>
+    <div id="alertError" class="alert alert-danger d-none" role="alert">Operation failed. Please try again.</div>
 
-    <div class="card shadow-sm mb-3">
-      <div class="card-body">
-
-        <!-- Alerts -->
-        <div id="alertSuccess" class="alert alert-success d-none rounded-3" role="alert" aria-live="polite">
-          ✅ অপারেশন সম্পন্ন হয়েছে!
-        </div>
-        <div id="alertError" class="alert alert-danger d-none rounded-3" role="alert" aria-live="polite">
-          ❌ কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন।
-        </div>
-
-        <!-- Form -->
-        <form id="itemForm" novalidate>
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <form id="itemForm" class="needs-validation" novalidate>
           <div class="mb-3">
-            <label for="newItem" class="form-label">Item Name <span class="text-danger">*</span></label>
-            <input id="newItem" name="item" class="form-control" placeholder="e.g. Rice" required>
-            <div class="invalid-feedback">Item name required</div>
+            <label for="itemName" class="form-label text-muted small text-uppercase fw-bold">Item Name</label>
+            <input type="text" id="itemName" class="form-control" placeholder="e.g., Rice, Oil, Spices" required />
+            <div class="invalid-feedback">অনুগ্রহ করে আইটেমের নাম দিন।</div>
           </div>
 
-          <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-success" id="btnSubmit">
-              <span class="btn-text">Submit</span>
-              <span class="btn-spinner spinner-border spinner-border-sm ms-2 d-none" aria-hidden="true"></span>
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg shadow-sm" id="btnSubmit">
+              <span id="btnSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"
+                aria-hidden="true"></span>
+              Add Item
             </button>
-            <button type="button" class="btn btn-secondary" id="btnClear">Clear</button>
+            <button type="button" class="btn btn-light text-muted btn-sm" id="btnClear">Clear Form</button>
           </div>
         </form>
-
-        <p id="msg" class="mt-3 text-muted" aria-live="polite"></p>
       </div>
     </div>
 
-    <!-- Current Items -->
-    <div class="card shadow-sm" id="listCard" hidden>
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h2 class="h5 mb-0">Current Items</h2>
-          <button id="btnRefresh" class="btn btn-outline-secondary btn-sm">Refresh</button>
-        </div>
-        <p class="subtle small mb-3">ডিলিট করতে চাইলে আইটেমের ডান পাশের বাটনে ক্লিক করুন।</p>
-
-        <div id="listLoading" class="spinner-wrap d-flex justify-content-center align-items-center">
-          <div class="spinner-border" role="status" aria-hidden="true"></div>
-          <span class="ms-2">লোড হচ্ছে...</span>
-        </div>
-
-        <ul id="itemList" class="d-none"></ul>
-
-        <div id="listEmpty" class="text-center text-body-secondary py-4 d-none">
-          কোনও আইটেম নেই।
+    <div class="mt-5">
+      <h2 class="h6 text-muted text-uppercase fw-bold mb-3">Existing Items</h2>
+      <button id="btnLoadItems" class="btn btn-outline-primary w-100 mb-3">Load Items List</button>
+      <div class="card shadow-sm d-none" id="listCard">
+        <div class="card-body p-0">
+          <div id="listLoading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2 text-muted small">Loading items...</div>
+          </div>
+          <div id="listEmpty" class="text-center text-muted py-4 d-none">No items found.</div>
+          <ul id="itemList" class="list-group list-group-flush d-none"></ul>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal (আগের মতই রাখা হয়েছে) -->
-  <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteTitle" aria-hidden="true">
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 shadow">
-        <div class="modal-header border-0">
-          <h5 class="modal-title" id="confirmDeleteTitle">আপনি কি নিশ্চিত?</h5>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm Delete</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p class="mb-0"><strong id="confirmItemName">এই আইটেম</strong> ডিলিট করা হবে। এটা আর ফিরিয়ে আনা যাবে না।</p>
+          Are you sure you want to delete <strong id="confirmItemName"></strong>?
         </div>
-        <div class="modal-footer border-0">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">বাতিল</button>
-          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-            <i class="bi bi-trash me-1" aria-hidden="true"></i> Delete
-          </button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Scripts -->
   <script src="config.js"></script>
   <script src="item.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
